@@ -1,0 +1,66 @@
+# ===================================================================
+# Comprehensive C++ .gitignore
+# Combines a generic C++ template with Visual Studio specifics.
+# ===================================================================
+
+# 1. Rules from the generic C++ template (from gitignore.io)
+# -------------------------------------------------------------------
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# 2. Rules for IDEs and Operating Systems (Visual Studio)
+# -------------------------------------------------------------------
+# Visual Studio / MSVC
+.vs/
+*.user
+*.suo
+*.sln.docstates
+*.tlog
+*.ipch
+
+# Build output directories
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+Win32/
+
+# Other temporary files
+*.log
+*.tmp
+*.pdb
+*.ilk
+
+# Operating System generated files
+# macOS
+.DS_Store
+# Windows
+Thumbs.db
+desktop.ini
