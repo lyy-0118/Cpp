@@ -27,7 +27,7 @@ template<class T, class Ref, class Ptr> //数据类型 引用(T&) 指针(T*)
 class RBTreeIterator {
 public:
 	typedef RBTreeNode<T> Node;
-	typedef RBTreeIterator<T, Ref, Ptr> Self;
+	typedef RBTreeIterator<T, Ref, Ptr> Self; //迭代器类型
 	Node* _node; //当前迭代器存放结点
 	Node* _root; //存放根节点
 
@@ -79,7 +79,8 @@ public:
 			_node = min;
 		}
 		else {
-			//左为空 向上找 直到找到的当前节点是父节点的右子树
+			//左为空 前驱是它的某个祖先。向上回溯。
+			// 持续向上，直到“cur”是它“parent”的右孩子。
 			Node* cur = _node;
 			Node* parent = cur->_parent;
 			while (parent && cur == parent->_left) {
