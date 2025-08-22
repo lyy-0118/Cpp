@@ -278,16 +278,17 @@ namespace hash_bucket
             Node* cur = _tables[hashi];
             while (cur)
             {
-                if (cur->_kv.first == key)
+				if (cur->_kv.first == key) //找到了要删除的
                 {
-                    if (prev == nullptr)
+                    //改变指针指向后删除
+					if (prev == nullptr)   // 没有前驱结点 为当前链表的头结点
                     {
                         // 头结点
                         _tables[hashi] = cur->_next;
                     }
                     else
                     {
-                        // 中间节点
+                        // 中间节点 
                         prev->_next = cur->_next;
                     }
 
@@ -296,7 +297,7 @@ namespace hash_bucket
 
                     return true;
                 }
-                else
+                else     //没找到 继续向后查找
                 {
                     prev = cur;
                     cur = cur->_next;
