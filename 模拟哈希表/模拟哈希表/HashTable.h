@@ -205,6 +205,7 @@ namespace hash_bucket
             if (Find(kv.first))
                 return false;
 
+            Hash hash;
             // 负载因子 == 1时扩容
             if (_n == _tables.size())
             {
@@ -242,7 +243,6 @@ namespace hash_bucket
 
                 _tables.swap(newTable);
             }
-            Hash hash;
             size_t hashi = hash(kv.first) % _tables.size();
             // 头插
             Node* newnode = new Node(kv);

@@ -187,7 +187,7 @@ struct DateHashFunc
 //	//int a[] = { 19,30,52,63,11,22 };
 //	
 //	const char* a1[] = { "abcd", "sort", "insert" };
-//	HashTable<string, string> ht1;
+//	open_address::HashTable<string, string> ht1;
 //	for (auto& e : a1)
 //	{
 //		ht1.Insert({ e, e });
@@ -198,17 +198,18 @@ struct DateHashFunc
 //	cout << HashFunc<string>()("aadd") << endl;
 //
 //	int a2[] = { -19,-30,5,36,13,20,21,12 };
-//	HashTable<int, int> ht2;
+//	open_address::HashTable<int, int> ht2;
 //	for (auto e : a2)
 //	{
 //		ht2.Insert({ e, e });
 //	}
 //
 //	// ¹þÏ£³åÍ»
-//	HashTable<Date, int, DateHashFunc> ht;
+//	open_address::HashTable<Date, int, DateHashFunc> ht;
 //	ht.Insert({ { 2024, 10, 12 }, 1});
-//	ht.Insert({ { 2024, 12, 10 }, 1 });
-//
+//	ht.Insert({ { 2024, 12, 10 }, 1});
+//	cout << DateHashFunc()({ 2024, 10, 12 }) << endl;
+//	cout << DateHashFunc()({ 2024, 12, 10 }) << endl;
 //	return 0;
 //}
 
