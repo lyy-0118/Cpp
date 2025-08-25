@@ -176,12 +176,80 @@ namespace hash_bucket
     {
         typedef HashNode<K, V> Node;
     public:
+        void swap(HashTable& other) noexcept
+        {
+            using std::swap; // 启用 ADL
+            swap(_tables, other._ tables);
+            swap(_n, other._ n);
+        }
+
         HashTable()
             :_tables(__stl_next_prime(0))
             , _n(0)
         { }
 
         // 拷贝构造和赋值重载也需要
+        HashTable(const HashTable<K, V, Hash>& ht)
+        {
+            _tables.resize(ht._ tables.size());
+            for (size_t i = 0; i < ht._ tables.size(); ++i)
+            {
+                _tables[i] = nullptr; // 确保新桶的头指针是空的
+                Node* cur = ht._tables[i];
+                while (cur)
+                {
+                    Node* newnode = new Node(cur->_kv);
+                    newnode->_next = _ tables[i];
+                    _tables[i] = newnode;
+                    cur = cur->_next;
+                }
+            }
+            _n = ht._ n;
+        }
+
+        HashTable<K, V, Hash>& operator=(const HashTable<K, V, Hash>& ht)
+        {
+   //         if (this == &ht) // 避免自拷贝
+   //             return *this;
+   //         // 释放旧表
+   //         for (size_t i = 0; i < _tables.size(); i++)
+   //         {
+   //             Node* cur = _tables[i];
+   //             while (cur)
+   //             {
+   //                 Node* next = cur->_next;
+   //                 delete cur;
+
+   //                 cur = next;
+   //             }
+
+   //             _tables[i] = nullptr;
+   //         }
+			//// 拷贝新表
+   //         _tables.resize(ht._tables.size());
+   //         _n = ht._n;
+   //         for (size_t i = 0; i < _tables.size(); i++)
+   //         {
+   //             Node* cur = ht._tables[i];
+   //             while (cur)
+   //             {
+   //                 // 头插到新表
+   //                 Node* newnode = new Node(cur->_kv);
+   //                 newnode->_next = _tables[i];
+   //                 _tables[i] = newnode;
+
+   //                 cur = cur->_next;
+   //             }
+   //         }
+
+   //         return *this;
+
+			// 现代写法
+            HashTable temp(ht); // 1. 调用拷贝构造函数，创建一个临时的副本
+            swap(temp);         // 2. 交换当前对象(*this)和临时副本的内容
+            return *this;       // 3. 临时副本 temp 在离开作用域时会自动析构，
+            //    从而释放了 *this 原来的旧资源
+        }
 
         ~HashTable()
         {
@@ -237,7 +305,7 @@ namespace hash_bucket
                         cur = next;
                     }
 
-                    _tables[i] = nullptr;
+                    _tables[i] = nullptr; // 释放旧表
 
                 }
 
