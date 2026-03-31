@@ -58,7 +58,6 @@ public:
 		/*定位 new
 		在已有内存 obj 上构造 T
 		调用构造函数
-		不分配内存
 		不分配内存*/
 		new(obj) T;
 		return obj;
