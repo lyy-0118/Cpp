@@ -138,8 +138,8 @@ void TestObjectPool()
 	cout << "object pool cost time:" << end2 - begin2 << endl;
 }
 
-int main()
-{
-	TestObjectPool();
-    return 0;
-}
+//int main()
+//{
+//	TestObjectPool();
+//    return 0;
+//}
