@@ -14,9 +14,32 @@ using std::endl;
 //C++中尽量避免用宏，与之替换的是static const
 static const size_t NFREELIST = 208;  //自由链表的数量，208是根据内存池的设计来定的，具体数值可以根据实际需求调整
 static const size_t MAX_BYTES = 256*1024; //ThreadCache单次申请的最大字节数
+static const size_t PAGE_NUM = 129;       //PageCache中每次向系统申请的页数，129是根据内存池的设计来定的，具体数值可以根据实际需求调整
+static const size_t PAGE_SHIFT = 13;      //一页为8KB,右移13位算页数
 
 //size_t的大小会随着平台位数发生变化，32位下size_t是unsigned int（4字节），64位下是unsigned __int64（8字节）
 typedef size_t PageID;
+
+#ifdef _WIN32
+#include<Windows.h> // Windows下的头文件
+#else
+// 这里是Linux相关的头文件，就不写出来了
+#endif // _WIN32
+
+// 直接去堆上按页申请空间
+inline static void* SystemAlloc(size_t kpage)
+{
+#ifdef _WIN32 // Windows下的系统调用接口
+	void* ptr = VirtualAlloc(0, kpage << PAGE_SHIFT, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+#else
+	// linux下brk mmap等
+#endif
+
+	if (ptr == nullptr)
+		throw std::bad_alloc(); // 申请失败抛出异常
+
+	return ptr;
+}
 
 //FreeList实现——ThreadCache中的哈希桶
 class FreeList
@@ -149,7 +172,7 @@ public:
 		}
 	}
 
-	//计算单次申请上限的算法
+	//一次thread cache从中心缓存获取多少个size大小的对象，慢启动上限值
 	static size_t NumMoveSize(size_t size) {
 		assert(size > 0); //不能申请0大小的空间
 		size_t num = MAX_BYTES / size;
@@ -174,6 +197,19 @@ public:
 		return num;
 	}
 
+	//计算一次向系统获取几个页
+	/*根据对象大小 size，先估算一次该搬多少个对象，
+	  再把这批对象占用的总字节数换算成页数；不足 1 页至少给 1 页*/
+	static size_t NumMovePage(size_t size) {
+		size_t num = NumMoveSize(size); //对于大小为 size 的对象，一次最多应该批量申请多少个对象。
+		size_t npage = num * size;      //一次批量申请的总字节数
+
+		npage >>= PAGE_SHIFT;   //把“总字节数”换算成“页数”
+		if (npage == 0) {
+			npage = 1;
+		}
+		return npage;
+	}
 };
 
 // Span管理⼀个跨度的⼤块内存
@@ -214,6 +250,14 @@ public:
 	void PushFront(Span* ptr) {
 		Insert(_head->_next, ptr);
 	}
+	//删除掉第一个Span
+	Span* PopFront() {
+		assert(!Empty()); //链表不能为空
+		Span* first = _head->_next; //第一个span
+		Erase(first); //删除第一个span
+		return first; //返回被删除的span
+	}
+
 	void Insert(Span* pos, Span* ptr) {
 		//在pos节点前插入ptr节点
 		assert(pos);

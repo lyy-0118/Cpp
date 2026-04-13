@@ -12,7 +12,7 @@ public:
 		return &_sInst;
 	}
 	// 获取⼀个⾮空的span
-	Span* GetOneSpan(SpanList& list, size_t byte_size);
+	Span* GetOneSpan(SpanList& list, size_t size);
 
 	// 从cc获取⼀定数量的对象给thread cache
 	size_t FetchRangeObj(void*& start, void*& end, size_t batchNum, size_t alignSize);
@@ -25,6 +25,7 @@ private:
 	CentralCache(const CentralCache& copy) = delete;
 	CentralCache& operator = (const CentralCache& copy) = delete;
 
+private:
 	SpanList _spanLists[NFREELIST]; //哈希桶，存储Span链表
 	static CentralCache _sInst; //饿汉模式创建一个CentralCache
 };

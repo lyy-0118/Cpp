@@ -26,10 +26,15 @@ void ThreadCache::Deallocate(void* obj, size_t size) {
 	_freeLists[index].Push(obj);
 }
 
-void* ThreadCache::FetchFromCentralCache(size_t index, size_t alignSize) {
+void* ThreadCache::FetchFromCentralCache(size_t index , size_t alignSize) {
+	// 慢启动上限值，第一次申请就是1块，之后每次申请的块数逐渐增加，直到达到上限值
 	// 通过MaxSize和NumMoveSize控制cc给tc提供多少块alignSize大小的空间
+#ifdef WIN32
+	size_t batchNum = min(_freeLists[index].MaxSize(), SizeClass::NumMoveSize(alignSize));
+#else
+	//其他系统中的用std::min，WIN32中用min，linux中用std::min，linux中需要加上std命名空间
 	size_t batchNum = std::min(_freeLists[index].MaxSize(), SizeClass::NumMoveSize(alignSize));
-
+#endif //WIN32
 	if (batchNum == _freeLists[index].MaxSize()) {
 		_freeLists[index].MaxSize() += 1; // 下次多给一块
 	}
