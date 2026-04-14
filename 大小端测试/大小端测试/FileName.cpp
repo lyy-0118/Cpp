@@ -8,10 +8,10 @@ int main() {
     unsigned char* p = (unsigned char*)&x;
 
     if (p[0] == 0x78) {
-        cout << "小端 little-endian\n";
+        cout << "小端 little-endian\n";    //小端高地址放高字节
     }
     else if (p[0] == 0x12) {
-        cout << "大端 big-endian\n";
+        cout << "大端 big-endian\n";       //大端低地址放高字节
     }
     else {
         cout << "未知字节序\n";
