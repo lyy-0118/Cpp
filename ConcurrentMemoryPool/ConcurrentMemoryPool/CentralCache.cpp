@@ -33,7 +33,7 @@ size_t CentralCache::FetchRangeObj(void*& start, void*& end, size_t batchNum, si
 	span->_freeList = FreeList::ObjNext(end);
 	// 返回的空间[end]的下一个对象指向nullptr，不要与原先span的链表连接在一起了
 	FreeList::ObjNext(end) = nullptr;
-	span->_useCount += actualNum;
+	span->_useCount += actualNum;  //给tc分了多少就给_useCount加多少
 
 	list._mtx.unlock(); //解锁
 

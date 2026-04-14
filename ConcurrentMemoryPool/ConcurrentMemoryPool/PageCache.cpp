@@ -7,7 +7,7 @@ Span* PageCache::NewSpan(size_t k) {
 	assert(k > 0 && k < PAGE_NUM); //申请的页数必须大于0
 	//➀ k号桶有span
 	if(!_spanLists[k].Empty()) {
-		std::lock_guard<std::mutex> lock(_pageMtx); //锁住当前桶，保护span链表的安全访问
+		
 		if (!_spanLists[k].Empty()) { //双重检查，防止在加锁之前其他线程已经把span取走了
 			return _spanLists[k].PopFront(); //从k号桶中取出一个span返回
 		}
