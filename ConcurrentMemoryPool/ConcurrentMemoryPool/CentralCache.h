@@ -17,6 +17,8 @@ public:
 	// 从cc获取⼀定数量的对象给thread cache
 	size_t FetchRangeObj(void*& start, void*& end, size_t batchNum, size_t alignSize);
 	
+	// 将tc还回来的多块空间放到cc对应的span中
+	void ReleaseListToSpans(void* start, size_t size);
 private:
 	//单例，去掉构造、拷构和拷赋
 	CentralCache()

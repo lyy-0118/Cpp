@@ -46,6 +46,6 @@ void ConcurrentAllocTest2() {
 }
 int main()
 {
-    ConcurrentAllocTest2();
+    ConcurrentAllocTest1();
     return 0;
 }

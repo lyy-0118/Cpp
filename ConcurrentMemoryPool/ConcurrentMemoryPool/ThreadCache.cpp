@@ -18,12 +18,18 @@ void* ThreadCache::Allocate(size_t size) {
 	return FetchFromCentralCache(index, alignSize);
 }
 
+// 释放内存，obj是要释放的对象，size是对象的大小
 void ThreadCache::Deallocate(void* obj, size_t size) {
 	assert(obj); // 释放的对象不能为空
 	assert(size <= MAX_BYTES);
 
-	size_t index = SizeClass::Index(size);
-	_freeLists[index].Push(obj);
+	size_t index = SizeClass::Index(size);  //找到size的自由链表
+	_freeLists[index].Push(obj);    //把obj放回对应的自由链表桶中
+
+	//当前桶中的块数大于等于单批次申请块数的时候返还空间给CC
+	if (_freeLists[index].Size()> _freeLists[index].MaxSize()) {
+		ListTooLong(_freeLists[index], size);
+	}
 }
 
 void* ThreadCache::FetchFromCentralCache(size_t index , size_t alignSize) {
@@ -53,6 +59,19 @@ void* ThreadCache::FetchFromCentralCache(size_t index , size_t alignSize) {
 	}
 
 	// actualNum > 1，给tc回填[start下一个, end]
-	_freeLists[index].PushRange(FreeList::ObjNext(start), end);
+	_freeLists[index].PushRange(FreeList::ObjNext(start), end, actualNum-1);
 	return start;
+}
+
+//tc向cc归还list桶中的空间，list是要归还的自由链表，size是要归还的空间的大小
+void ThreadCache::ListTooLong(FreeList& list, size_t size) {
+	void* start = nullptr;
+	void* end = nullptr;
+
+	//start和end分别指向list中要归还给cc的空间的起始地址和结束地址
+	list.PopRange(start, end, list.MaxSize()); //从list中弹出SizeClass::NumMoveSize(size)块空间，[start,end]是弹出的空间
+
+	//归还给cc
+	CentralCache::GetInstance()->ReleaseListToSpans(start, size); //这里不需要传end，因为PopRange能保证end后面就是空，所以只需要判断一下next为不为空就能判断出是不是end了。
+	
 }

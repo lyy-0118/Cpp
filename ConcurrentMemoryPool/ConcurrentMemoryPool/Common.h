@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <iostream>
 #include <vector>
+#include <unordered_map>
 
 #include<time.h>
 #include <assert.h>
@@ -46,6 +47,11 @@ class FreeList
 {
 public:
 	FreeList() : _freeList(nullptr) {}
+
+	size_t Size() const { //返回当前自由链表中块的数量
+		return _size;
+	}
+
 	bool Empty() { //判断哈希桶是否为空
 		return _freeList == nullptr;
 	}
@@ -56,6 +62,7 @@ public:
 	{
 		return *(void**)obj;
 	}
+
 	void Push(void* obj)
 	{
 		assert(obj); //插入的对象不能为空
@@ -63,22 +70,45 @@ public:
 		//*(void**)obj = _freeList;
 		ObjNext(obj) = _freeList;
 		_freeList = obj;
+
+		++_size; //当前自由链表中块的数量加1
 	}
+
 	void* Pop()
 	{
 		//在链表头删并返回一个内存块obj
 		assert(_freeList); //弹出的对象不能为空
 		void* obj = _freeList;
 		_freeList = ObjNext(_freeList);
+
+		--_size; //当前自由链表中块的数量减1
 		return obj;
 	}
 
 	//向自由链表中头插，且插入多块空间
-	void PushRange(void* start, void* end) {
+	void PushRange(void* start, void* end,size_t size) {
 		//把[start,end]这n块空间插入到自由链表中
 		ObjNext(end) = _freeList; //end的下一个对象指向原来的链表头
 		_freeList = start; //链表头指向start
+
+		_size += size; //当前自由链表中块的数量加size
 	}
+
+	//从自由链表中弹出N个块空间，[start,end]是弹出的空间
+	void PopRange(void*& start, void*& end, size_t n) {
+		//从自由链表中弹出size块空间，[start,end]是弹出的空间
+		assert(n <= _size); //弹出的块数不能超过当前自由链表中块的数量
+		start = end = _freeList; //start指向链表头
+		
+		for(int i=0;i<n-1;++i) {
+			end = ObjNext(end); //end指向下一个对象
+		}
+
+		_freeList = ObjNext(end); //链表头指向end的下一个对象
+		ObjNext(end) = nullptr;   //end的下一个对象指向nullptr，表示弹出的空间已经脱离了链表
+		_size -= n; //当前自由链表中块的数量减size
+	}
+
 	//tc向cc申请内存，未达到上限时能申请到的最大块空间
 	size_t& MaxSize() {
 		return _maxSize;
@@ -88,6 +118,7 @@ private:
 	size_t _maxSize = 1; //当前自由链表申请未达到上限时，能申请的最大快空间是多少
 						 //初始值给1，表示第一次申请的就是1块
 						 //到了上限之后_maxSize这个值就作废了
+	size_t _size = 0; //当前自由链表中块的大小，单位是字节，初始化为0，表示还没有块被分配到这个链表中
 };
 
 //当线程申请一个size时，要计算出对应对齐之后的字节数
@@ -218,13 +249,15 @@ public:
 struct Span {
 public:
 	PageID _pageID = 0; //页ID
-	size_t n = 0; //当前span管理的页数
+	size_t _n = 0; //当前span管理的页数
 
 	void* _freeList = nullptr; //当前span管理的内存块链表头
 	size_t _useCount = 0; //当前span管理的内存块被分配出去的数量
 
 	Span* _next = nullptr; //当前span所在链表的下一个span
 	Span* _prev = nullptr; //当前span所在链表的上一个span
+
+	bool _isUse = false; //判断当前span是在cc还是pc中
 };
 
 //SpanList实现——CentralCache中的哈希桶
