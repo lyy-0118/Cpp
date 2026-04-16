@@ -42,6 +42,16 @@ inline static void* SystemAlloc(size_t kpage)
 	return ptr;
 }
 
+// 直接去堆上释放空间
+inline static void SystemFree(void* ptr)
+{
+#ifdef _WIN32
+	VirtualFree(ptr, 0, MEM_RELEASE);
+#else
+	// sbrk unmmap等
+#endif
+}
+
 //FreeList实现——ThreadCache中的哈希桶
 class FreeList
 {
@@ -198,8 +208,10 @@ public:
 		else if(size <256*1024)
 			return _RoundUp(size, 8 * 1024); //[64*1024+1,256*1024]字节的空间8 * 1024字节对齐
 		else {
-			assert(false); //通过tc申请的空间不能超过256KB
-			return -1;
+			//单次申请空间大于256KB，直接按照页来对齐
+			//把 size 按 8192 字节（8KB）向上对齐
+			//虽然这里跟上面的一样，但如果后续想要修改页大小的时候就直接修改PAGE_SHIFT
+			return _RoundUp(size,1 << PAGE_SHIFT);
 		}
 	}
 

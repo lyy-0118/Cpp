@@ -4,7 +4,15 @@
 PageCache PageCache::_sInst; //单例对象
 
 Span* PageCache::NewSpan(size_t k) {
-	assert(k > 0 && k < PAGE_NUM); //申请的页数必须大于0
+	assert(k > 0); //申请的页数必须大于0
+	//如果申请的页数大于128页了，就直接向系统申请，不放回pc中管理了
+	if (k > PAGE_NUM - 1) {
+		void* ptr = SystemAlloc(k); //向系统申请k页内存
+		Span* span = new Span();
+		span->_pageID = (PageID)ptr >> PAGE_SHIFT; //span管理的内存块的起始页号
+		span->_n = k; //span管理的页数
+		return span; //返回span
+	}
 	//➀ k号桶有span
 	if(!_spanLists[k].Empty()) {
 		
@@ -80,8 +88,23 @@ Span* PageCache::MapObjectToSpan(void* obj) {
 	}
 }
 
-//管理cc归还的span
+
+// 在实现 ReleaseSpanToPageCache 时，
+// 不需要把 256KB ~1024KB 这段 span 单独拿出来写特殊释放规则；
+// 它们可以按普通 span 处理。
+// 只需要额外处理那些 页数超过 128 页（大于 1MB） 的超大 span 即可。
+// 因为对于超大 span，合并后可能会超过 128 页，所以直接还给系统，不放回 pc 中了；
+
+// 管理cc归还的span
 void PageCache::ReleaseSpanToPageCache(Span* span) {
+	//通过span判断释放的空间页数是否大于128页，如果大于128页就直接还给os
+	if(span->_n>PAGE_NUM-1) {
+		void* ptr = (void*)(span->_pageID << PAGE_SHIFT); //通过span的页号计算出内存块的起始地址
+		SystemFree(ptr); //直接还给系统
+		delete span; //删除span对象
+
+		return ;
+	}
 	//向左不断合并
 	while (1) {
 		PageID leftId = span->_pageID - 1; //span左边的相邻页

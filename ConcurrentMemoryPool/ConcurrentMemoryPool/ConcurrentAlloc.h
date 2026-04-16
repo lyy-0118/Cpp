@@ -1,12 +1,20 @@
 #pragma once
 #include "ThreadCache.h"
+#include "PageCache.h"
 //其实就是tcmalloc,线程调用这个函数申请空间
 void* ConcurrentAlloc(size_t size) {
-	cout << "Thread " << std::this_thread::get_id() <<" "<<pTLSThreadCache << endl;
-	if(size > MAX_BYTES) { //如果申请的空间超过了ThreadCache单次申请的最大字节数，就直接向系统申请内存
-		return malloc(size);
+	if(size > MAX_BYTES) {
+		//（256,1024] 找pc
+		size_t alignSize = SizeClass::RoundUp(size);  //先按照页大小对齐
+		size_t k = alignSize >> PAGE_SHIFT; //算出来对齐之后要多少页
+
+		PageCache::GetInstance()->_pageMtx.lock(); // 对pc中的span进行操作，加锁
+		Span* span = PageCache::GetInstance()->NewSpan(k); // 直接向pc要
+		PageCache::GetInstance()->_pageMtx.unlock(); // 解锁
+		void* ptr = (void*)(span->_pageID << PAGE_SHIFT); // 通过获得到的span来提供空间
+		return ptr;
 	}
-	else {
+	else {  //申请空间小于等于 256KB 就走原先的逻辑 
 		if(pTLSThreadCache == nullptr) { //如果当前线程还没有ThreadCache对象，就创建一个
 			pTLSThreadCache = new ThreadCache();
 		}
@@ -16,8 +24,16 @@ void* ConcurrentAlloc(size_t size) {
 
 //线程调用这个函数释放空间
 void ConcurrentFree(void* obj, size_t size) {
-	if(size > MAX_BYTES) { //如果释放的空间超过了ThreadCache单次申请的最大字节数，就直接向系统释放内存
-		free(obj);
+	assert(obj); // 释放的对象不能为空
+
+	if(size > MAX_BYTES) {
+		//（256,1024] 找pc
+		// 通过obj找到对应的span，因为前面申请空间的
+	    // 时候已经保证了维护的空间首页地址已经映射过了
+		Span* span = PageCache::GetInstance()->MapObjectToSpan(obj);
+		PageCache::GetInstance()->_pageMtx.lock(); // 记得加锁解锁
+		PageCache::GetInstance()->ReleaseSpanToPageCache(span); // 直接通过span释放空间
+		PageCache::GetInstance()->_pageMtx.unlock(); // 记得加锁解锁
 	}
 	else {
 		if(pTLSThreadCache == nullptr) { //如果当前线程还没有ThreadCache对象，就创建一个
