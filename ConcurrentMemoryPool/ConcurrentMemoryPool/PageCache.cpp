@@ -11,6 +11,10 @@ Span* PageCache::NewSpan(size_t k) {
 		Span* span = new Span();
 		span->_pageID = (PageID)ptr >> PAGE_SHIFT; //span管理的内存块的起始页号
 		span->_n = k; //span管理的页数
+
+		_idSpanMap[(PageID)(span->_pageID)] = span;
+		_idSpanMap[(PageID)(span->_pageID) + span->_n - 1] = span;
+
 		return span; //返回span
 	}
 	//➀ k号桶有span
@@ -105,6 +109,7 @@ void PageCache::ReleaseSpanToPageCache(Span* span) {
 
 		return ;
 	}
+
 	//向左不断合并
 	while (1) {
 		PageID leftId = span->_pageID - 1; //span左边的相邻页

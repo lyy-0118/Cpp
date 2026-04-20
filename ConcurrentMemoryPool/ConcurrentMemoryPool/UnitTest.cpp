@@ -44,8 +44,16 @@ void ConcurrentAllocTest2() {
 	void* ptr = ConcurrentAlloc(5);
     cout << "--------" << ptr << endl;
 }
+//大空间的回收测试
+void BigAlloc() {
+    void* p1 = ConcurrentAlloc(257 * 1024);
+    ConcurrentFree(p1, 257 * 1024);
+
+    void* p2 = ConcurrentAlloc(129 * 8 * 1024);
+    ConcurrentFree(p2, 129 * 8 * 1024);
+}
 int main()
 {
-    ConcurrentAllocTest1();
+    BigAlloc();
     return 0;
 }
