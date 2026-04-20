@@ -13,7 +13,6 @@ Span* PageCache::NewSpan(size_t k) {
 		span->_n = k; //span管理的页数
 
 		_idSpanMap[(PageID)(span->_pageID)] = span;
-		_idSpanMap[(PageID)(span->_pageID) + span->_n - 1] = span;
 
 		return span; //返回span
 	}
@@ -51,7 +50,7 @@ Span* PageCache::NewSpan(size_t k) {
 			_spanLists[nSpan->_n].PushFront(nSpan);
 			//把n-k的span边缘页映射一下，方便后续合并
 			_idSpanMap[(PageID)(nSpan->_pageID)] = nSpan;
-			_idSpanMap[(PageID)(nSpan->_pageID) + nSpan->_n - 1] = kSpan;
+			_idSpanMap[(PageID)(nSpan->_pageID) + nSpan->_n - 1] = nSpan;
 
 			//记录kSpan的页号和span地址的映射关系
 			for (PageID i = 0; i < kSpan->_n; ++i) {
@@ -102,7 +101,7 @@ Span* PageCache::MapObjectToSpan(void* obj) {
 // 管理cc归还的span
 void PageCache::ReleaseSpanToPageCache(Span* span) {
 	//通过span判断释放的空间页数是否大于128页，如果大于128页就直接还给os
-	if(span->_n>PAGE_NUM-1) {
+	if(span->_n > PAGE_NUM-1) {
 		void* ptr = (void*)(span->_pageID << PAGE_SHIFT); //通过span的页号计算出内存块的起始地址
 		SystemFree(ptr); //直接还给系统
 		delete span; //删除span对象
