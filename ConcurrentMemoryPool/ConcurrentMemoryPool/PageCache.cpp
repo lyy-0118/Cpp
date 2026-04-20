@@ -8,7 +8,9 @@ Span* PageCache::NewSpan(size_t k) {
 	//如果申请的页数大于128页了，就直接向系统申请，不放回pc中管理了
 	if (k > PAGE_NUM - 1) {
 		void* ptr = SystemAlloc(k); //向系统申请k页内存
-		Span* span = new Span();
+		//Span* span = new Span();
+		Span* span = _spanPool.New();   //用定长内存池开空间
+
 		span->_pageID = (PageID)ptr >> PAGE_SHIFT; //span管理的内存块的起始页号
 		span->_n = k; //span管理的页数
 
@@ -17,18 +19,16 @@ Span* PageCache::NewSpan(size_t k) {
 		return span; //返回span
 	}
 	//➀ k号桶有span
-	if(!_spanLists[k].Empty()) {
-		
-		if (!_spanLists[k].Empty()) { //双重检查，防止在加锁之前其他线程已经把span取走了
-			Span* span = _spanLists[k].PopFront(); //从k号桶中取出一个span返回
+	if (!_spanLists[k].Empty()) { //双重检查，防止在加锁之前其他线程已经把span取走了
+		Span* span = _spanLists[k].PopFront(); //从k号桶中取出一个span返回
 
-			//记录分配出去的span管理的页号和其地址的映射关系
-			for(PageID i = 0; i < span->_n; ++i) {
-				_idSpanMap[(PageID)(span->_pageID + i)] = span;
-			}
-			return span;
+		//记录分配出去的span管理的页号和其地址的映射关系
+		for (PageID i = 0; i < span->_n; ++i) {
+			_idSpanMap[(PageID)(span->_pageID + i)] = span;
 		}
+		return span;
 	}
+
 	//➁ k号桶中没有，往下找更大页的桶中有没有span，找到就把span拿出来拆开
 	for (int i = k + 1; i < PAGE_NUM; ++i) {
 		//[k+1,PAGE_NUM-1]号桶中找有没有span
@@ -39,7 +39,8 @@ Span* PageCache::NewSpan(size_t k) {
 
 			//k页的span
 			//Span的空间是需要新建的，而不是用当前内存池中的空间
-			Span* kSpan = new Span();
+			//Span* kSpan = new Span();
+			Span* kSpan = _spanPool.New();
 			kSpan->_pageID = nSpan->_pageID;
 			kSpan->_n = k;
 
@@ -62,7 +63,8 @@ Span* PageCache::NewSpan(size_t k) {
 	//➂ k号桶中没有，且比k大的桶下面也没有，向系统申请
 	void* ptr = SystemAlloc(PAGE_NUM-1); //向系统申请128页内存
 	//开一个新span来管理这128页内存
-	Span* span = new Span();
+	//Span* span = new Span();
+	Span* span = _spanPool.New();
 	span->_pageID = (PageID)ptr >> PAGE_SHIFT; //span管理的内存块的起始页号
 	span->_n = PAGE_NUM - 1; //span管理的页数
 
@@ -104,7 +106,8 @@ void PageCache::ReleaseSpanToPageCache(Span* span) {
 	if(span->_n > PAGE_NUM-1) {
 		void* ptr = (void*)(span->_pageID << PAGE_SHIFT); //通过span的页号计算出内存块的起始地址
 		SystemFree(ptr); //直接还给系统
-		delete span; //删除span对象
+		//delete span; //删除span对象
+		_spanPool.Delete(span); //用定长内存池删
 
 		return ;
 	}
@@ -135,7 +138,8 @@ void PageCache::ReleaseSpanToPageCache(Span* span) {
 		
 		//不是释放左边那段页空间，
 		//这里删掉的不是实际内存页，而是描述这段页的那个 Span 结构体对象
-		delete leftSpan;
+		//delete leftSpan;
+		_spanPool.Delete(leftSpan); //用定长内存池删
 	}
 
 	//向右不断合并
@@ -160,7 +164,9 @@ void PageCache::ReleaseSpanToPageCache(Span* span) {
 
 		//把桶里面的span删掉
 		_spanLists[rightSpan->_n].Erase(rightSpan);
-		delete rightSpan;
+		//delete rightSpan;
+		_spanPool.Delete(rightSpan); //用定长内存池删
+
 	}
 	//合并完，把当前span放到对应哈希桶中去
 	_spanLists[span->_n].PushFront(span);

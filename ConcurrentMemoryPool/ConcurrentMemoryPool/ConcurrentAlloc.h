@@ -1,6 +1,8 @@
 #pragma once
 #include "ThreadCache.h"
 #include "PageCache.h"
+#include "ObjectPool.h"
+
 //其实就是tcmalloc,线程调用这个函数申请空间
 void* ConcurrentAlloc(size_t size) {
 	if(size > MAX_BYTES) {
@@ -16,16 +18,25 @@ void* ConcurrentAlloc(size_t size) {
 	}
 	else {  //申请空间小于等于 256KB 就走原先的逻辑 
 		if(pTLSThreadCache == nullptr) { //如果当前线程还没有ThreadCache对象，就创建一个
-			pTLSThreadCache = new ThreadCache();
+			//不用malloc
+			//pTLSThreadCache = new ThreadCache();
+
+			//用我们之前写的定长内存池申请空间
+			static ObjectPool<ThreadCache> objPool; //静态的,一直存在
+			objPool._poolMtx.lock(); //加锁，不然多线程会申请到空指针
+			pTLSThreadCache = objPool.New();
+			objPool._poolMtx.unlock();
 		}
 		return pTLSThreadCache->Allocate(size); //否则就直接用当前线程的ThreadCache对象来申请内存
 	}
 }
 
 //线程调用这个函数释放空间
-void ConcurrentFree(void* obj, size_t size) {
+void ConcurrentFree(void* obj) {
 	assert(obj); // 释放的对象不能为空
 
+	Span* span = PageCache::GetInstance()->MapObjectToSpan(obj); //通过obj找到对应的span
+	size_t size = span->_objSize; //通过映射来的span获取obj指向的空间大小 
 	if(size > MAX_BYTES) {
 		//（256,1024] 找pc
 		// 通过obj找到对应的span，因为前面申请空间的

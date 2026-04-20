@@ -262,6 +262,7 @@ struct Span {
 public:
 	PageID _pageID = 0; //页ID
 	size_t _n = 0; //当前span管理的页数
+	size_t _objSize = 0; //当前span管理的内存块大小
 
 	void* _freeList = nullptr; //当前span管理的内存块链表头
 	size_t _useCount = 0; //当前span管理的内存块被分配出去的数量

@@ -63,6 +63,7 @@ Span* CentralCache::GetOneSpan(SpanList& list, size_t size) {
 	PageCache::GetInstance()->_pageMtx.lock();   //加锁，保护pc中span链表的安全访问
 	Span* span = PageCache::GetInstance()->NewSpan(k); //调用NewSpan获取一个全新span
 	span->_isUse = true; //标记这个span是在cc中
+	span->_objSize = size; //记录这个span管理的内存块大小
 	PageCache::GetInstance()->_pageMtx.unlock(); //解锁
 
 	//start地址为当前页号*页大小，end地址为start地址加上span管理的页数*页大小
