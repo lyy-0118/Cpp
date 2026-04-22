@@ -1,6 +1,7 @@
 #pragma once
 #include "Common.h"
 #include "ObjectPool.h"
+#include "PageMap.h"
 
 class PageCache
 {
@@ -25,7 +26,9 @@ private:
 	static PageCache _sInst; //饿汉模式创建一个PageCache实例
 private:
 	SpanList _spanLists[PAGE_NUM]; //PC中的哈希桶，管理不同大小的span链表
-	std::unordered_map<PageID, Span*> _idSpanMap; //页ID到span的映射表，方便通过页ID找到对应的span
+	
+	//std::unordered_map<PageID, Span*> _idSpanMap; //页ID到span的映射表，方便通过页ID找到对应的span
+	TCMalloc_PageMap1<32-PAGE_SHIFT> _idSpanMap;
 
 	ObjectPool<Span> _spanPool;  //创建span的对象池
 public:

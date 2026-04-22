@@ -110,7 +110,7 @@ public:
 		assert(n <= _size); //弹出的块数不能超过当前自由链表中块的数量
 		start = end = _freeList; //start指向链表头
 		
-		for(int i=0;i<n-1;++i) {
+		for(size_t i = 0;i < n-1;++i) {
 			end = ObjNext(end); //end指向下一个对象
 		}
 

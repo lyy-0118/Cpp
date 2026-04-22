@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36310.24 d17.14
+VisualStudioVersion = 17.14.36310.24
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ConcurrentMemoryPool", "ConcurrentMemoryPool\ConcurrentMemoryPool.vcxproj", "{731B9E9F-B44F-4A63-87A7-3258AC73314E}"
 EndProject
@@ -17,8 +17,8 @@ Global
 		{731B9E9F-B44F-4A63-87A7-3258AC73314E}.Debug|x64.Build.0 = Debug|x64
 		{731B9E9F-B44F-4A63-87A7-3258AC73314E}.Debug|x86.ActiveCfg = Debug|Win32
 		{731B9E9F-B44F-4A63-87A7-3258AC73314E}.Debug|x86.Build.0 = Debug|Win32
-		{731B9E9F-B44F-4A63-87A7-3258AC73314E}.Release|x64.ActiveCfg = Release|x64
-		{731B9E9F-B44F-4A63-87A7-3258AC73314E}.Release|x64.Build.0 = Release|x64
+		{731B9E9F-B44F-4A63-87A7-3258AC73314E}.Release|x64.ActiveCfg = Release|Win32
+		{731B9E9F-B44F-4A63-87A7-3258AC73314E}.Release|x64.Build.0 = Release|Win32
 		{731B9E9F-B44F-4A63-87A7-3258AC73314E}.Release|x86.ActiveCfg = Release|Win32
 		{731B9E9F-B44F-4A63-87A7-3258AC73314E}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
