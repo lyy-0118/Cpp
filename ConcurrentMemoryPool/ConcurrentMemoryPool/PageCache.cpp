@@ -152,6 +152,7 @@ void PageCache::ReleaseSpanToPageCache(Span* span) {
 		span->_pageID = leftSpan->_pageID; //合并后span的页号是左边span的页号
 		span->_n += leftSpan->_n; //合并后span的页数是两者页数之和
 
+
 		_spanLists[leftSpan->_n].Erase(leftSpan); //从空闲链表移除 leftSpan
 		
 		//不是释放左边那段页空间，

@@ -68,7 +68,7 @@ void ThreadCache::ListTooLong(FreeList& list, size_t size) {
 	void* start = nullptr;
 	void* end = nullptr;
 
-	//start和end分别指向list中要归还给cc的空间的起始地址和结束地址
+	//start和end分别指向list中要归还给cc的空间的起始地址和结束地址，是输出型参数
 	list.PopRange(start, end, list.MaxSize()); //从list中弹出SizeClass::NumMoveSize(size)块空间，[start,end]是弹出的空间
 
 	//归还给cc
